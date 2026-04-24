@@ -1,0 +1,75 @@
+📌 Functional Requirements
+1️⃣ Menu Management
+
+The system shall provide a Menu Management Tab that allows the admin to:
+
+Add new items to the menu
+
+Edit existing menu items
+
+Delete menu items
+
+Set item price
+
+Add item category (e.g., Drinks, Desserts, Meals)
+
+Upload item image (optional)
+
+Display the full menu list
+
+2️⃣ Inventory Management
+
+The system shall provide an Inventory Management Tab that allows the admin to:
+
+Add new inventory items (ingredients/products)
+
+Update stock quantity
+
+Delete inventory items
+
+Track available stock levels
+
+Show low-stock alerts
+
+Automatically reduce inventory when an order is placed (advanced feature)
+
+3️⃣ Table & Order Management
+
+The system shall provide a Table Management Tab that allows staff to:
+
+View all tables with their current status:
+
+🟢 Free
+
+🔴 Occupied
+
+Assign an order to a specific table
+
+Add items to the table’s order
+
+Edit or remove items from the order
+
+View total bill for each table
+
+Checkout the table
+
+Automatically change table status to Free after checkout
+
+4️⃣ Daily Reports
+
+The system shall provide a Daily Reports Tab that allows the admin to:
+
+View total daily sales
+
+View number of orders per day
+
+View total revenue
+
+View most ordered items
+
+View revenue per table
+
+Filter report by specific date
+
+Export daily report (PDF or Excel – optional advanced feature)
+
