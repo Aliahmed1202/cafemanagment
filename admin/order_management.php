@@ -279,7 +279,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
-}
 
 // Handle GET requests
 $edit_order_id = intval($_GET['edit_order'] ?? 0);
