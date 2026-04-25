@@ -1,0 +1,25 @@
+# Composer
+vendor/
+composer.lock
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+# config/database.php - Uncomment if you want to exclude local db config
+# *.sql
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

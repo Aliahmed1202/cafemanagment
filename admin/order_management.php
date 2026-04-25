@@ -130,10 +130,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($item) {
                 $total_price = $item['price'] * $quantity;
                 
-                $sql = "INSERT INTO order_items (order_id, menu_item_id, name, price, quantity, instructions, total_price) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?)";
+                $sql = "INSERT INTO order_items (order_id, menu_item_id, quantity, unit_price, total_price, special_instructions) 
+                        VALUES (?, ?, ?, ?, ?, ?)";
                 $stmt = $conn->prepare($sql);
-                $stmt->bind_param("iisidis", $order_id, $menu_item_id, $item['name'], $item['price'], $quantity, $instructions, $total_price);
+                $stmt->bind_param("iiidds", $order_id, $menu_item_id, $quantity, $item['price'], $total_price, $instructions);
                 $stmt->execute();
                 
                 error_log("Add Order Item - Item Inserted Successfully");
@@ -167,33 +167,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($item_id > 0 && $quantity > 0) {
             // Get item details
-            $item_sql = "SELECT order_id, price FROM order_items WHERE id = ?";
+            $item_sql = "SELECT order_id, unit_price FROM order_items WHERE id = ?";
             $item_stmt = $conn->prepare($item_sql);
             $item_stmt->bind_param("i", $item_id);
             $item_stmt->execute();
             $item = $item_stmt->get_result()->fetch_assoc();
             
             if ($item) {
-                $total_price = $item['price'] * $quantity;
+                $total_price = $item['unit_price'] * $quantity;
                 $order_id = $item['order_id'];
                 
+                // Start transaction or just run updates (MyISAM doesn't support transactions)
                 $sql = "UPDATE order_items SET quantity = ?, total_price = ? WHERE id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("idi", $quantity, $total_price, $item_id);
-                $stmt->execute();
                 
-                // Update order total
-                $update_sql = "UPDATE orders SET 
-                    subtotal = (SELECT COALESCE(SUM(total_price), 0) FROM order_items WHERE order_id = ?),
-                    total_amount = (SELECT COALESCE(SUM(total_price), 0) FROM order_items WHERE order_id = ?)
-                    WHERE id = ?";
-                $update_stmt = $conn->prepare($update_sql);
-                $update_stmt->bind_param("iii", $order_id, $order_id, $order_id);
-                $update_stmt->execute();
-                
-                echo json_encode(['success' => true]);
+                if ($stmt->execute()) {
+                    // Update order total
+                    $update_sql = "UPDATE orders SET 
+                        subtotal = (SELECT COALESCE(SUM(total_price), 0) FROM order_items WHERE order_id = ?),
+                        total_amount = (SELECT COALESCE(SUM(total_price), 0) FROM order_items WHERE order_id = ?)
+                        WHERE id = ?";
+                    $update_stmt = $conn->prepare($update_sql);
+                    $update_stmt->bind_param("iii", $order_id, $order_id, $order_id);
+                    $update_stmt->execute();
+                    
+                    echo json_encode(['success' => true]);
+                    exit;
+                } else {
+                    echo json_encode(['success' => false, 'error' => 'Database update failed']);
+                    exit;
+                }
+            } else {
+                echo json_encode(['success' => false, 'error' => 'Item not found']);
                 exit;
             }
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Invalid parameters']);
+            exit;
+        }
         }
     } elseif ($action == 'remove_order_item') {
         $item_id = intval($_POST['item_id'] ?? 0);
@@ -212,20 +224,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $sql = "DELETE FROM order_items WHERE id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("i", $item_id);
-                $stmt->execute();
-                
-                // Update order total
-                $update_sql = "UPDATE orders SET 
-                    subtotal = (SELECT COALESCE(SUM(total_price), 0) FROM order_items WHERE order_id = ?),
-                    total_amount = (SELECT COALESCE(SUM(total_price), 0) FROM order_items WHERE order_id = ?)
-                    WHERE id = ?";
-                $update_stmt = $conn->prepare($update_sql);
-                $update_stmt->bind_param("iii", $order_id, $order_id, $order_id);
-                $update_stmt->execute();
-                
-                echo json_encode(['success' => true]);
+                if ($stmt->execute()) {
+                    // Update order total
+                    $update_sql = "UPDATE orders SET 
+                        subtotal = (SELECT COALESCE(SUM(total_price), 0) FROM order_items WHERE order_id = ?),
+                        total_amount = (SELECT COALESCE(SUM(total_price), 0) FROM order_items WHERE order_id = ?)
+                        WHERE id = ?";
+                    $update_stmt = $conn->prepare($update_sql);
+                    $update_stmt->bind_param("iii", $order_id, $order_id, $order_id);
+                    $update_stmt->execute();
+                    
+                    echo json_encode(['success' => true]);
+                    exit;
+                } else {
+                    echo json_encode(['success' => false, 'error' => 'Database deletion failed']);
+                    exit;
+                }
+            } else {
+                echo json_encode(['success' => false, 'error' => 'Item not found']);
                 exit;
             }
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Invalid item ID']);
+            exit;
         }
     } elseif ($action == 'cancel_order') {
         $order_id = intval($_POST['order_id'] ?? 0);
@@ -321,7 +342,7 @@ if ($edit_order_id > 0) {
     
     if ($edit_order) {
         // Get order items
-        $items_sql = "SELECT oi.*, mi.name, mi.price
+        $items_sql = "SELECT oi.*, mi.name, mi.price, oi.special_instructions as instructions
                       FROM order_items oi 
                       LEFT JOIN menu_items mi ON oi.menu_item_id = mi.id
                       WHERE oi.order_id = ? 
@@ -1194,19 +1215,19 @@ $html_lang = ($_SESSION['lang'] === 'ar') ? 'ar' : 'en';
                                                     </td>
                                                     <td><?php echo $lang['currency_symbol']; ?><?php echo number_format($item['price'] ?? 0, 2); ?></td>
                                                     <td>
-                                                        <div class="d-flex align-items-center gap-2">
-                                                            <button class="btn btn-sm btn-outline-secondary" onclick="updateItemQuantity(<?php echo $item['id']; ?>, <?php echo ($item['quantity'] ?? 1) - 1; ?>">-</button>
-                                                            <span><?php echo $item['quantity'] ?? 1; ?></span>
-                                                            <button class="btn btn-sm btn-outline-secondary" onclick="updateItemQuantity(<?php echo $item['id']; ?>, <?php echo ($item['quantity'] ?? 1) + 1; ?>">+</button>
-                                                        </div>
-                                                    </td>
-                                                    <td class="fw-bold"><?php echo $lang['currency_symbol']; ?><?php echo number_format($item['total_price'], 2); ?></td>
-                                                    <td><?php echo htmlspecialchars($item['instructions'] ?? ''); ?></td>
-                                                    <td>
-                                                        <button class="btn btn-sm btn-outline-danger" onclick="removeOrderItem(<?php echo $item['id']; ?>)">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </td>
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <button class="btn btn-sm btn-outline-secondary" onclick="updateItemQuantity(<?php echo (int)$item['id']; ?>, <?php echo (int)($item['quantity'] ?? 1) - 1; ?>)">-</button>
+                                                                    <span><?php echo (int)($item['quantity'] ?? 1); ?></span>
+                                                                    <button class="btn btn-sm btn-outline-secondary" onclick="updateItemQuantity(<?php echo (int)$item['id']; ?>, <?php echo (int)($item['quantity'] ?? 1) + 1; ?>)">+</button>
+                                                                </div>
+                                                            </td>
+                                                            <td class="fw-bold"><?php echo $lang['currency_symbol']; ?><?php echo number_format($item['total_price'], 2); ?></td>
+                                                            <td><?php echo htmlspecialchars($item['instructions'] ?? ''); ?></td>
+                                                            <td>
+                                                                <button class="btn btn-sm btn-outline-danger" onclick="removeOrderItem(<?php echo (int)$item['id']; ?>)">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>
@@ -1351,7 +1372,13 @@ $html_lang = ($_SESSION['lang'] === 'ar') ? 'ar' : 'en';
             .then(data => {
                 if (data.success) {
                     location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
                 }
+            })
+            .catch(error => {
+                console.error('Update Item Quantity - Error:', error);
+                alert('Error updating quantity. Check console for details.');
             });
         }
 
@@ -1368,7 +1395,13 @@ $html_lang = ($_SESSION['lang'] === 'ar') ? 'ar' : 'en';
                 .then(data => {
                     if (data.success) {
                         location.reload();
+                    } else {
+                        alert('Error: ' + (data.error || 'Unknown error'));
                     }
+                })
+                .catch(error => {
+                    console.error('Remove Order Item - Error:', error);
+                    alert('Error removing item. Check console for details.');
                 });
             }
         }
