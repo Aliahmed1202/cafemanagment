@@ -105,7 +105,7 @@ if (isset($_GET['lang'])) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #00A896 0%, #005F60 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -119,7 +119,7 @@ if (isset($_GET['lang'])) {
         .cafe-logo {
             width: 80px;
             height: 80px;
-            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(45deg, #00A896 0%, #005F60 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -135,11 +135,11 @@ if (isset($_GET['lang'])) {
             transition: all 0.3s ease;
         }
         .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border-color: #00A896;
+            box-shadow: 0 0 0 0.2rem rgba(0, 168, 150, 0.25);
         }
         .btn-submit {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(45deg, #00A896 0%, #005F60 100%);
             border: none;
             border-radius: 10px;
             padding: 12px;
@@ -148,7 +148,7 @@ if (isset($_GET['lang'])) {
         }
         .btn-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 20px rgba(0, 168, 150, 0.3);
         }
         .language-switcher {
             position: absolute;
@@ -178,12 +178,12 @@ if (isset($_GET['lang'])) {
             right: auto;
         }
         .back-link {
-            color: #667eea;
+            color: #00A896;
             text-decoration: none;
             font-weight: 500;
         }
         .back-link:hover {
-            color: #764ba2;
+            color: #005F60;
             text-decoration: underline;
         }
     </style>

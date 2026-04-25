@@ -113,7 +113,7 @@ if (isset($_GET['lang'])) {
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #00A896 0%, #005F60 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -135,7 +135,7 @@ if (isset($_GET['lang'])) {
                 radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
                 radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 60% 60%, rgba(102, 126, 234, 0.1) 0%, transparent 40%);
+                radial-gradient(circle at 60% 60%, rgba(0, 168, 150, 0.1) 0%, transparent 40%);
             animation: float 25s ease-in-out infinite;
         }
         
@@ -167,7 +167,7 @@ if (isset($_GET['lang'])) {
                 0 25px 50px rgba(0, 0, 0, 0.15),
                 0 10px 20px rgba(0, 0, 0, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.9),
-                0 0 0 100px rgba(102, 126, 234, 0.1);
+                0 0 0 100px rgba(0, 168, 150, 0.1);
             backdrop-filter: blur(25px);
             border: 1px solid rgba(255, 255, 255, 0.4);
             padding: 32px;
@@ -187,7 +187,7 @@ if (isset($_GET['lang'])) {
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.05), transparent);
+            background: linear-gradient(45deg, transparent, rgba(0, 168, 150, 0.05), transparent);
             border-radius: 24px;
             z-index: -1;
         }
@@ -198,13 +198,13 @@ if (isset($_GET['lang'])) {
                 0 35px 70px rgba(0, 0, 0, 0.2),
                 0 15px 30px rgba(0, 0, 0, 0.15),
                 inset 0 1px 0 rgba(255, 255, 255, 0.9),
-                0 0 0 120px rgba(102, 126, 234, 0.15);
+                0 0 0 120px rgba(0, 168, 150, 0.15);
         }
         
         .cafe-logo {
             width: 70px;
             height: 70px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #00A896 0%, #005F60 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -213,8 +213,8 @@ if (isset($_GET['lang'])) {
             color: white;
             font-size: 32px;
             box-shadow: 
-                0 15px 35px rgba(240, 147, 251, 0.4),
-                0 5px 15px rgba(245, 87, 108, 0.3),
+                0 15px 35px rgba(0, 168, 150, 0.4),
+                0 5px 15px rgba(0, 95, 96, 0.3),
                 inset 0 0 0 3px rgba(255, 255, 255, 0.2);
             position: relative;
             animation: pulse 2.5s ease-in-out infinite;
@@ -224,8 +224,8 @@ if (isset($_GET['lang'])) {
         .cafe-logo:hover {
             transform: scale(1.1) rotate(5deg);
             box-shadow: 
-                0 20px 40px rgba(240, 147, 251, 0.5),
-                0 8px 20px rgba(245, 87, 108, 0.4);
+                0 20px 40px rgba(0, 168, 150, 0.5),
+                0 8px 20px rgba(0, 95, 96, 0.4);
         }
         
         .cafe-logo::before {
@@ -235,7 +235,7 @@ if (isset($_GET['lang'])) {
             left: -5px;
             right: -5px;
             bottom: -5px;
-            background: linear-gradient(135deg, #f093fb, #f5576c, #667eea, #764ba2);
+            background: linear-gradient(135deg, #00A896, #005F60, #00A896);
             border-radius: 50%;
             z-index: -1;
             opacity: 0.8;
@@ -255,7 +255,7 @@ if (isset($_GET['lang'])) {
         .login-title {
             font-size: 24px;
             font-weight: 800;
-            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            background: linear-gradient(135deg, #00A896, #005F60);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -307,11 +307,11 @@ if (isset($_GET['lang'])) {
         }
         
         .form-control:focus {
-            border-color: #667eea;
+            border-color: #00A896;
             box-shadow: 
-                0 0 0 6px rgba(102, 126, 234, 0.15),
-                0 6px 20px rgba(102, 126, 234, 0.2),
-                inset 0 0 0 3px rgba(102, 126, 234, 0.1);
+                0 0 0 6px rgba(0, 168, 150, 0.15),
+                0 6px 20px rgba(0, 168, 150, 0.2),
+                inset 0 0 0 3px rgba(0, 168, 150, 0.1);
             background: white;
             transform: translateY(-3px);
             outline: none;
@@ -345,8 +345,8 @@ if (isset($_GET['lang'])) {
         }
         
         .input-group:focus-within .input-group-text {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-color: #667eea;
+            background: linear-gradient(135deg, #00A896, #005F60);
+            border-color: #00A896;
             color: white;
             transform: scale(1.05);
         }
@@ -363,9 +363,9 @@ if (isset($_GET['lang'])) {
         }
         
         .password-toggle:hover {
-            color: #667eea;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-color: #667eea;
+            color: #00A896;
+            background: linear-gradient(135deg, #00A896, #005F60);
+            border-color: #00A896;
             color: white;
             transform: scale(1.05);
         }
@@ -418,8 +418,8 @@ if (isset($_GET['lang'])) {
         }
         
         .form-check-input:checked {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-color: #667eea;
+            background: linear-gradient(135deg, #00A896, #005F60);
+            border-color: #00A896;
             transform: scale(1.1);
         }
         
@@ -432,7 +432,7 @@ if (isset($_GET['lang'])) {
         }
         
         .btn-login {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background: linear-gradient(135deg, #00A896 0%, #005F60 50%, #00A896 100%);
             border: none;
             border-radius: 14px;
             padding: 16px;
@@ -445,7 +445,7 @@ if (isset($_GET['lang'])) {
             text-transform: uppercase;
             letter-spacing: 1.5px;
             box-shadow: 
-                0 8px 25px rgba(102, 126, 234, 0.3),
+                0 8px 25px rgba(0, 168, 150, 0.3),
                 inset 0 0 0 2px rgba(255, 255, 255, 0.2);
         }
         
@@ -467,8 +467,8 @@ if (isset($_GET['lang'])) {
         .btn-login:hover {
             transform: translateY(-4px) scale(1.02);
             box-shadow: 
-                0 15px 35px rgba(102, 126, 234, 0.4),
-                0 8px 20px rgba(118, 75, 162, 0.3),
+                0 15px 35px rgba(0, 168, 150, 0.4),
+                0 8px 20px rgba(0, 95, 96, 0.3),
                 inset 0 0 0 3px rgba(255, 255, 255, 0.3);
         }
         
@@ -508,7 +508,7 @@ if (isset($_GET['lang'])) {
             background: white;
             transform: translateY(-3px) scale(1.05);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            border-color: rgba(102, 126, 234, 0.3);
+            border-color: rgba(0, 168, 150, 0.3);
         }
         
         .language-text {
@@ -566,8 +566,8 @@ if (isset($_GET['lang'])) {
         .language-option:hover {
             background: linear-gradient(135deg, #f8f9fa, #e9ecef);
             transform: translateX(5px);
-            border-color: rgba(102, 126, 234, 0.2);
-            color: #667eea;
+            border-color: rgba(0, 168, 150, 0.2);
+            color: #00A896;
         }
         
         .language-option i {
@@ -632,7 +632,7 @@ if (isset($_GET['lang'])) {
         }
         
         .forgot-link {
-            color: #667eea;
+            color: #00A896;
             text-decoration: none;
             font-weight: 700;
             transition: all 0.3s ease;
@@ -648,12 +648,12 @@ if (isset($_GET['lang'])) {
             left: 0;
             width: 0;
             height: 2px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #00A896, #005F60);
             transition: width 0.3s ease;
         }
         
         .forgot-link:hover {
-            color: #764ba2;
+            color: #005F60;
             transform: translateY(-2px);
         }
         
@@ -679,7 +679,7 @@ if (isset($_GET['lang'])) {
             left: 0;
             width: 4px;
             height: 100%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #00A896, #005F60);
         }
         
         .demo-credentials h6 {
@@ -710,7 +710,7 @@ if (isset($_GET['lang'])) {
         }
         
         .demo-credentials .credential-item strong {
-            color: #667eea;
+            color: #00A896;
             font-weight: 800;
         }
         
@@ -744,7 +744,7 @@ if (isset($_GET['lang'])) {
             border-top: 4px solid white;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 20px rgba(0, 168, 150, 0.5);
         }
         
         @keyframes spin {

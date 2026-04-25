@@ -86,14 +86,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $table_number = 'T' . ($_POST['table_number'] ?? '');
         $capacity = intval($_POST['capacity'] ?? 0);
         $location = trim($_POST['location'] ?? '');
-        $status = $_POST['status'] ?? 'Ready for Order';
+        $status = 'Ready for Order'; // Default status
         
         if ($capacity > 0 && !empty($location)) {
-            $sql = "INSERT INTO tables (table_number, capacity, location, status) VALUES (?, ?, ?, ?)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("siss", $table_number, $capacity, $location, $status);
-            $stmt->execute();
-            $success_message = "Table added successfully!";
+            // Check if table number already exists
+            $check_sql = "SELECT id FROM tables WHERE table_number = ?";
+            $check_stmt = $conn->prepare($check_sql);
+            $check_stmt->bind_param("s", $table_number);
+            $check_stmt->execute();
+            $result = $check_stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                $error_message = "Table number $table_number already exists!";
+            } else {
+                $sql = "INSERT INTO tables (table_number, capacity, location, status) VALUES (?, ?, ?, 'Ready for Order')";
+                $stmt = $conn->prepare($sql);
+                $stmt->bind_param("sis", $table_number, $capacity, $location);
+                $stmt->execute();
+                $success_message = "Table added successfully!";
+            }
         } else {
             $error_message = "Please fill all required fields!";
         }
@@ -102,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $table_number = 'T' . ($_POST['table_number'] ?? '');
         $capacity = intval($_POST['capacity'] ?? 0);
         $location = trim($_POST['location'] ?? '');
-        $status = $_POST['status'] ?? 'Ready for Order';
+        $status = 'Ready for Order'; // Default status
         
         if ($table_id > 0 && $capacity > 0 && !empty($location)) {
             $sql = "UPDATE tables SET table_number = ?, capacity = ?, location = ?, status = ? WHERE id = ?";
@@ -134,8 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("si", $payment_method, $order_id);
             $stmt->execute();
 
-            // Update table status to Cleaning and clear current order
-            $update_sql = "UPDATE tables SET status = 'Cleaning', current_order_id = NULL WHERE id = ?";
+            // Update table status to Cleaning
+            $update_sql = "UPDATE tables SET status = 'Cleaning' WHERE id = ?";
             $update_stmt = $conn->prepare($update_sql);
             $update_stmt->bind_param("i", $table_id);
             $update_stmt->execute();
@@ -160,6 +171,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute();
             $success_message = "Table marked as reserved.";
         }
+    } elseif ($action == 'update_status') {
+        $table_id = intval($_POST['table_id'] ?? 0);
+        $new_status = $_POST['status'] ?? '';
+        
+        if ($table_id > 0 && !empty($new_status)) {
+            $sql = "UPDATE tables SET status = ? WHERE id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("si", $new_status, $table_id);
+            $stmt->execute();
+            
+            // Return JSON response for AJAX
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'Table status updated successfully']);
+            exit;
+        } else {
+            // Return JSON response for AJAX
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid table ID or status']);
+            exit;
+        }
     }
 }
 
@@ -172,16 +203,23 @@ $normalize_sql = "UPDATE tables SET status = CASE
 END WHERE status IN ('available', 'occupied', 'served')";
 $conn->query($normalize_sql);
 
-// Get tables with current order information
+// Get tables with current order information and set default status
 $tables_sql = "SELECT t.*, 
                 (SELECT o.order_number FROM orders o WHERE o.table_id = t.id AND o.status IN ('under progress', 'preparing') ORDER BY o.created_at DESC LIMIT 1) as current_order_number,
                 (SELECT o.total_amount FROM orders o WHERE o.table_id = t.id AND o.status IN ('under progress', 'preparing') ORDER BY o.created_at DESC LIMIT 1) as current_order_total,
                 (SELECT o.status FROM orders o WHERE o.table_id = t.id AND o.status IN ('under progress', 'preparing') ORDER BY o.created_at DESC LIMIT 1) as current_order_status,
-                (SELECT o.id FROM orders o WHERE o.table_id = t.id AND o.status IN ('under progress', 'preparing') ORDER BY o.created_at DESC LIMIT 1) as current_order_id
+                (SELECT o.id FROM orders o WHERE o.table_id = t.id AND o.status IN ('under progress', 'preparing') ORDER BY o.created_at DESC LIMIT 1) as current_order_id,
+                CASE 
+                    WHEN (SELECT COUNT(*) FROM orders o WHERE o.table_id = t.id AND o.status IN ('under progress', 'preparing')) > 0 THEN 'Have Order'
+                    ELSE 'Ready for Order'
+                END as effective_status
                 FROM tables t 
                 ORDER BY t.table_number";
 $tables_result = $conn->query($tables_sql);
 $tables = $tables_result->fetch_all(MYSQLI_ASSOC);
+
+// Debug: Log the tables data
+error_log("Tables query result: " . print_r($tables, true));
 
 $page_title = $lang['table_management'];
 // Set text direction based on language
@@ -748,19 +786,10 @@ $html_lang = ($_SESSION['lang'] === 'ar') ? 'ar' : 'en';
                                     <option value=""><?php echo $lang['select_location']; ?></option>
                                     <option value="Indoor">Indoor</option>
                                     <option value="Outdoor">Outdoor</option>
-                                    <option value="Terrace">Terrace</option>
-                                    <option value="VIP Room">VIP Room</option>
+                            
                                 </select>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="form-status" class="form-label"><?php echo $lang['table_status']; ?></label>
-                                <select class="form-select" id="form-status" name="status">
-                                    <option value="Ready for Order">Ready for Order</option>
-                                    <option value="Reserved">Reserved</option>
-                                    <option value="Cleaning">Cleaning</option>
-                                </select>
-                            </div>
                             
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-primary flex-fill" id="submit-btn">
@@ -788,11 +817,13 @@ $html_lang = ($_SESSION['lang'] === 'ar') ? 'ar' : 'en';
                         </div>
                     <?php else: ?>
                         <?php foreach ($tables as $table):
-                            $status_class = strtolower(str_replace(' ', '-', $table['status']));
+                            // Use effective status for display (based on current orders)
+                            $effective_status = $table['effective_status'];
+                            $status_class = strtolower(str_replace(' ', '-', $effective_status));
                             
-                            // Map database status to display text
-                            $status_display = $table['status'];
-                            switch($table['status']) {
+                            // Map effective status to display text
+                            $status_display = $effective_status;
+                            switch($effective_status) {
                                 case 'Ready for Order':
                                     $status_display = $lang['ready_for_order'];
                                     break;
@@ -812,7 +843,7 @@ $html_lang = ($_SESSION['lang'] === 'ar') ? 'ar' : 'en';
                                     $status_display = $lang['occupied'];
                                     break;
                                 default:
-                                    $status_display = htmlspecialchars($table['status']);
+                                    $status_display = htmlspecialchars($effective_status);
                             }
                             ?>
                             <div class="col-md-6 col-sm-6 mb-4">
@@ -840,6 +871,23 @@ $html_lang = ($_SESSION['lang'] === 'ar') ? 'ar' : 'en';
                                         </div>
                                     </div>
 
+                                    <div class="mb-3">
+                                        <small class="text-muted d-block text-uppercase small fw-bold mb-1"><?php echo $lang['table_status']; ?></small>
+                                        <!-- Debug: Current status: <?php echo htmlspecialchars($effective_status); ?> | Lang: <?php echo htmlspecialchars($_SESSION['lang'] ?? 'not_set'); ?> | Ready text: <?php echo htmlspecialchars($lang['ready_for_order'] ?? 'MISSING'); ?> -->
+                                        <div class="d-flex gap-1">
+                                            <button type="button" class="btn btn-sm flex-fill <?php echo ($effective_status === 'Ready for Order' || $effective_status === 'available') ? 'btn-success' : 'btn-outline-success'; ?>" onclick="updateTableStatus(<?php echo $table['id']; ?>, 'Ready for Order')">
+                                                Ready for Order
+                                            </button>
+                                            <button type="button" class="btn btn-sm flex-fill <?php echo $effective_status === 'Reserved' ? 'btn-warning' : 'btn-outline-warning'; ?>" onclick="updateTableStatus(<?php echo $table['id']; ?>, 'Reserved')">
+                                                Reserved
+                                            </button>
+                                            <button type="button" class="btn btn-sm flex-fill <?php echo ($effective_status === 'Cleaning' || $effective_status === 'cleaning') ? 'btn-secondary' : 'btn-outline-secondary'; ?>" onclick="updateTableStatus(<?php echo $table['id']; ?>, 'Cleaning')">
+                                                Cleaning
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Debug: Order ID: <?php echo $table['current_order_id'] ?? 'null'; ?> | Status: <?php echo $effective_status; ?> -->
                                     <?php if ($table['current_order_id']): ?>
                                         <div class="current-order-info">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -859,13 +907,13 @@ $html_lang = ($_SESSION['lang'] === 'ar') ? 'ar' : 'en';
                                     <?php endif; ?>
 
                                     <div class="workflow-buttons d-flex flex-wrap gap-2 mt-auto pt-3 border-top">
-                                        <?php if ($table['status'] === 'Ready for Order' || $table['status'] === 'Reserved'): ?>
+                                        <?php if ($effective_status === 'Ready for Order' || $effective_status === 'Available' || $effective_status === 'Reserved'): ?>
                                             <a href="order_management.php?action=create_order&table_id=<?php echo $table['id']; ?>" class="btn btn-sm btn-success flex-grow-1 py-2 rounded-2">
-                                                <i class="fas fa-utensils me-2"></i>Order
+                                                <i class="fas fa-plus me-2"></i>Create Order
                                             </a>
                                         <?php endif; ?>
 
-                                        <?php if ($table['status'] === 'Have Order'): ?>
+                                        <?php if ($effective_status === 'Have Order'): ?>
                                             <a href="order_management.php?edit_order=<?php echo $table['current_order_id']; ?>" class="btn btn-sm btn-info flex-grow-1 py-2 rounded-2 text-white">
                                                 <i class="fas fa-eye me-2"></i>View
                                             </a>
@@ -880,7 +928,7 @@ $html_lang = ($_SESSION['lang'] === 'ar') ? 'ar' : 'en';
                                             </form>
                                         <?php endif; ?>
 
-                                        <?php if ($table['status'] === 'Cleaning'): ?>
+                                        <?php if ($effective_status === 'Cleaning'): ?>
                                             <form method="POST" class="w-100">
                                                 <input type="hidden" name="action" value="finish_cleaning">
                                                 <input type="hidden" name="table_id" value="<?php echo $table['id']; ?>">
@@ -963,6 +1011,77 @@ $html_lang = ($_SESSION['lang'] === 'ar') ? 'ar' : 'en';
 
         function confirmDelete(tableNumber) {
             return confirm(`Are you sure you want to delete table ${tableNumber}? This action cannot be undone.`);
+        }
+
+        function updateTableStatus(tableId, newStatus) {
+            const formData = new FormData();
+            formData.append('action', 'update_status');
+            formData.append('table_id', tableId);
+            formData.append('status', newStatus);
+
+            fetch('table_management.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update button states immediately
+                    const tableCard = document.getElementById('table-card-' + tableId);
+                    const buttons = tableCard.querySelectorAll('.mb-3 .d-flex button');
+                    
+                    // Reset all buttons to outline
+                    buttons.forEach(btn => {
+                        if (btn.textContent.includes('<?php echo $lang['ready_for_order']; ?>')) {
+                            btn.className = 'btn btn-sm flex-fill btn-outline-success';
+                        } else if (btn.textContent.includes('<?php echo $lang['reserved']; ?>')) {
+                            btn.className = 'btn btn-sm flex-fill btn-outline-warning';
+                        } else if (btn.textContent.includes('<?php echo $lang['cleaning']; ?>')) {
+                            btn.className = 'btn btn-sm flex-fill btn-outline-secondary';
+                        }
+                    });
+                    
+                    // Highlight the selected button
+                    buttons.forEach(btn => {
+                        if (btn.onclick.toString().includes("'" + newStatus + "'")) {
+                            if (newStatus === 'Ready for Order') {
+                                btn.className = 'btn btn-sm flex-fill btn-success';
+                            } else if (newStatus === 'Reserved') {
+                                btn.className = 'btn btn-sm flex-fill btn-warning';
+                            } else if (newStatus === 'Cleaning') {
+                                btn.className = 'btn btn-sm flex-fill btn-secondary';
+                            }
+                        }
+                    });
+                    
+                    // Update status badge
+                    const statusBadge = tableCard.querySelector('.table-status');
+                    if (statusBadge) {
+                        // Update status badge text and class
+                        if (newStatus === 'Ready for Order') {
+                            statusBadge.textContent = '<?php echo $lang['ready_for_order']; ?>';
+                            statusBadge.className = 'status-badge status-ready-for-order table-status';
+                        } else if (newStatus === 'Reserved') {
+                            statusBadge.textContent = '<?php echo $lang['reserved']; ?>';
+                            statusBadge.className = 'status-badge status-reserved table-status';
+                        } else if (newStatus === 'Cleaning') {
+                            statusBadge.textContent = '<?php echo $lang['cleaning']; ?>';
+                            statusBadge.className = 'status-badge status-cleaning table-status';
+                        }
+                    }
+                    
+                    // Update table card class
+                    tableCard.className = tableCard.className.replace(/\bready-for-order\b|\bhave-order\b|\bcleaning\b|\breserved\b/g, '');
+                    const statusClass = newStatus.toLowerCase().replace(' ', '-');
+                    tableCard.classList.add('table-card', 'h-100', statusClass);
+                    
+                } else {
+                    console.error('Error updating table status:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         }
     </script>
             </div>

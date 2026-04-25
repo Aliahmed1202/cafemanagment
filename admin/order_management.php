@@ -262,8 +262,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Handle GET requests
 $edit_order_id = intval($_GET['edit_order'] ?? 0);
+$action = $_GET['action'] ?? '';
+$create_order_table_id = intval($_GET['table_id'] ?? 0);
 $edit_order = null;
 $edit_order_items = [];
+
+// Debug: Log GET parameters
+error_log("GET parameters: " . print_r($_GET, true));
+error_log("action: " . $action);
+error_log("table_id: " . $create_order_table_id);
+
+// Handle create_order GET request
+if ($action === 'create_order' && $create_order_table_id > 0) {
+    error_log("Processing create_order for table_id: " . $create_order_table_id);
+    // Check if table exists and is ready
+    $table_sql = "SELECT * FROM tables WHERE id = ?";
+    $table_stmt = $conn->prepare($table_sql);
+    $table_stmt->bind_param("i", $create_order_table_id);
+    $table_stmt->execute();
+    $table = $table_stmt->get_result()->fetch_assoc();
+    
+    if ($table) {
+        // Generate order number
+        $order_number = 'ORD' . date('Ymd') . str_pad(mt_rand(1, 999), 3, '0', STR_PAD_LEFT);
+        
+        // Create the order
+        $sql = "INSERT INTO orders (order_number, table_id, customer_id, status, payment_status, notes, created_at) 
+                VALUES (?, ?, 0, 'under progress', 'unpaid', '', NOW())";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("si", $order_number, $create_order_table_id);
+        $stmt->execute();
+        
+        $order_id = $stmt->insert_id;
+        
+        // Update table status
+        $update_sql = "UPDATE tables SET status = 'Have Order' WHERE id = ?";
+        $update_stmt = $conn->prepare($update_sql);
+        $update_stmt->bind_param("i", $create_order_table_id);
+        $update_stmt->execute();
+        
+        // Redirect to edit the newly created order
+        header("Location: order_management.php?edit_order=$order_id");
+        exit;
+    }
+}
 
 if ($edit_order_id > 0) {
     // Get order details
