@@ -206,7 +206,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['success' => false, 'error' => 'Invalid parameters']);
             exit;
         }
-        }
     } elseif ($action == 'remove_order_item') {
         $item_id = intval($_POST['item_id'] ?? 0);
         
@@ -279,6 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+}
 
 // Handle GET requests
 $edit_order_id = intval($_GET['edit_order'] ?? 0);
