@@ -71,6 +71,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = $_POST['status'] ?? '';
         
         if ($order_id > 0 && !empty($status)) {
+            // Check if trying to set status to 'completed'
+            if ($status === 'completed') {
+                // Get current payment status
+                $payment_check_sql = "SELECT payment_status FROM orders WHERE id = ?";
+                $payment_check_stmt = $conn->prepare($payment_check_sql);
+                $payment_check_stmt->bind_param("i", $order_id);
+                $payment_check_stmt->execute();
+                $payment_result = $payment_check_stmt->get_result()->fetch_assoc();
+                
+                if ($payment_result['payment_status'] !== 'paid') {
+                    echo json_encode(['success' => false, 'error' => 'Order must be paid before it can be marked as completed']);
+                    exit;
+                }
+            }
+            
             $sql = "UPDATE orders SET status = ? WHERE id = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("si", $status, $order_id);
@@ -84,10 +99,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $payment_status = $_POST['payment_status'] ?? '';
         
         if ($order_id > 0 && !empty($payment_status)) {
+            // Get current order status before updating payment
+            $status_check_sql = "SELECT status FROM orders WHERE id = ?";
+            $status_check_stmt = $conn->prepare($status_check_sql);
+            $status_check_stmt->bind_param("i", $order_id);
+            $status_check_stmt->execute();
+            $status_result = $status_check_stmt->get_result()->fetch_assoc();
+            $current_status = $status_result['status'];
+            
+            // Update payment status
             $sql = "UPDATE orders SET payment_status = ? WHERE id = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("si", $payment_status, $order_id);
             $stmt->execute();
+            
+            // If payment is set to 'paid' and order is not already completed or cancelled, mark as completed
+            if ($payment_status === 'paid' && !in_array($current_status, ['completed', 'cancelled'])) {
+                $complete_sql = "UPDATE orders SET status = 'completed' WHERE id = ?";
+                $complete_stmt = $conn->prepare($complete_sql);
+                $complete_stmt->bind_param("i", $order_id);
+                $complete_stmt->execute();
+            }
             
             echo json_encode(['success' => true]);
             exit;
