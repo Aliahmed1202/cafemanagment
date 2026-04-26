@@ -30,13 +30,19 @@ if (isset($_GET['logout']) && $_GET['logout'] == 'success') {
     $success_message = 'You have been successfully logged out.';
 }
 
-// Check if user is already logged in and redirect to dashboard
+// Check if user is already logged in and redirect to appropriate dashboard
 if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
     // Clear any output buffers
     if (ob_get_level()) {
         ob_end_clean();
     }
-    header('Location: ../admin/dashboard.php');
+    
+    // Redirect based on user role
+    if (isset($_SESSION['role']) && $_SESSION['role'] === 'staff') {
+        header('Location: ../admin/staff_dashboard.php');
+    } else {
+        header('Location: ../admin/dashboard.php');
+    }
     exit();
 }
 
@@ -76,7 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // Store token in database (would need to add remember_token column to users table)
             }
             
-            header('Location: ../admin/dashboard.php');
+            // Redirect based on user role
+            if ($user['role'] === 'staff') {
+                header('Location: ../admin/staff_dashboard.php');
+            } else {
+                header('Location: ../admin/dashboard.php');
+            }
             exit();
         } else {
             $error = $lang['invalid_credentials'];
